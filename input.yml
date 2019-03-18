@@ -1,0 +1,20 @@
+OnboardConfig:
+ Account:
+  - ENTER CONTRACTID HERE
+  - ENTER GROUPID HERE
+ ProductId:
+  - ENTER PRODUCTID HERE 
+ Host-Origin:
+  - HOST1:ORIGIN1
+  - HOST2:ORIGIN2
+ notify:
+  - test@gmail.com
+OnboardCertconfig:
+  Action: TRUE
+  CN: HOST1
+  Altnames: ["HOST1","HOST2"]
+OnboardSecurityConfig:
+  Policy: pol_name
+  
+
+
