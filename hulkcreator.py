@@ -21,8 +21,9 @@ import argparse
 from datetime import datetime
 import calendar
 import yaml
-from papifunctions import createNewConfig,addHostNames,updateConfigRules,creatCertEnrollment,activateConfig,createCPCodes,getCPCodes,createSecureEdgeHostname,checkCertEnrollment,getDVChallenges
+from papifunctions import createNewConfig,addHostNames,updateConfigRules,creatCertEnrollment,activateConfigStaging,activateConfigProduction,createCPCodes,getCPCodes,createSecureEdgeHostname,checkCertEnrollment,getDVChallenges
 import time
+import route53
 # Main Program
 if __name__ == '__main__':
     print("Loading up!!! We are now reading your input, please give us a moment...")
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     certaltnames=yamlhandle['OnboardCertconfig']['Altnames']
     # Let us first put in the cert request, as that takes a longer time...
     if certdecision == True:
-      print("Certificate creation job in progress. Please note that the normal certification creation and deployment ETA is approximately 4 hours.")
+      print("Step 1: Certificate creation job in progress. Please note that the normal certification creation and deployment ETA is approximately 4 hours.")
       result=creatCertEnrollment(shortcontractid,certcn,certaltnames)
       if "403" not in result.text:
         print("Looks like the DV SSL Certificate was created successfully. In ~5-10 minutes, we should have the DV challenges ready for you.")
@@ -70,17 +71,19 @@ if __name__ == '__main__':
           if retreiveDVchallenges == "success":
             dcv="TRUE";
           else:
-            print("Looks like the DCV challenges are not ready yet! We will keep checking every 5 minutes.")    
-        print("Please ensure that you complete the DNS validations for LetsEncrypt ASAP!!")
+            print("Looks like the DCV challenges are not ready yet! We will keep checking every 5 minutes.")
         user_dcv_actions_completed="FALSE"
         while user_dcv_actions_completed == "FALSE":
-          dcv_complete_user=input("Have you setup the DNS entries as per the instructions? Press Y if you have: ")
+          #dcv_complete_user=input("Have you setup the DNS entries as per the instructions? Press Y if you have: ")
+          dcv_complete_user="Y"
+          user_dcv_actions_completed="TRUE";
+
           if dcv_complete_user == "Y":
             user_dcv_actions_completed="TRUE";
-            print("Awesome, Thank you!. Now we only have to wait for a couple of hours for the certificate to be deployed.") 
+            print("Step 3: Certificate Deployment") 
             certdeploy="FALSE";     
             while certdeploy=="FALSE":
-              print("Now, the program will keep checking the status of your certificate every 15 mins, until it gets deployed.We will only go forward with the next steps once certificate is deployed on the platform. This activity might take ~3-4 hours. Appreciate your patience here.")
+              print("The program will keep checking the status of your certificate every 15 mins, until it gets deployed.We will only go forward with the next steps once certificate is deployed on the platform. This activity might take ~3-4 hours. Appreciate your patience here.")
               #after every 1 hours of wait time , we will check if the cert has been deployed or not.
               time.sleep(900)
               enrollmentstatus=checkCertEnrollment(enrollmentID,changeID)
@@ -89,7 +92,7 @@ if __name__ == '__main__':
                 print("Looks like there is some delay in the certificate deployment. Let us check after an hour...")
               else:
                certdeploy="TRUE";
-               print("Looks like the certificate is deployed succesfully. Let us now create a brand new Edge Host Name.")
+               print("Looks like the certificate is deployed succesfully.")
           else:
             print("OK, we will check back in 5 minutes")
       else:
@@ -101,7 +104,7 @@ if __name__ == '__main__':
         hostname=host_origin_data[0]
         origin_dns_ip=host_origin_data[1]
         #origin_dns_ip has origin IP/DNS stored.
-        print("Building the setup for " + hostname + ". Please wait...")
+        print("Step 4: Creating a new edge hostname and new config. Hostname currently in effect " + hostname + ". Please wait...")
         counthosts+=1
         #Create new config API call.
         result=createNewConfig(productid,hostname,contractid,groupid)
@@ -115,11 +118,11 @@ if __name__ == '__main__':
             propertyid=outputcatch.group(2)
             result=createSecureEdgeHostname(hostname,shortcontractid,shortgroupid,enrollmentID)
             #Waiting for the EdgeHostName requests to come to the pending state.
-            time.sleep(600)
+            time.sleep(800)
             # call the hostname addition PAPI call
             result=addHostNames(productid,hostname,contractid,groupid,propertyid)
             if result.status_code != 200:
-                print("Sorry, something went wrong with hostname addition! Exiting the program now!")
+                print("Sorry, something went wrong with hostname addition within SPS! Exiting the program now!")
                 #Enable the next line if you want debugging capabilities
                 print(result.json())
                 exit()
@@ -130,7 +133,7 @@ if __name__ == '__main__':
                   print("CPCODE creation error! Using the default CPCODE")
                   print(result.json())
                 else:
-                  print("CPCODE created successfully.") 
+                  print("Step 5: Creating new CP codes for configs") 
                   cpcodeapioutput=re.search('(.*)cpc_(.*)\?(.*)',str(result.json()))   ### Extracting the CPCODE
                   cpcode=int(cpcodeapioutput.group(2))
                   cpcode_status=getCPCodes(str(cpcode),contractid,groupid)
@@ -141,7 +144,7 @@ if __name__ == '__main__':
                   epoch_time = (utc_time - datetime(1970, 1, 1)).total_seconds()
                   cpcode_time=int(epoch_time)  
                   #End of computing the CPCODE creation time for JSON input.
-                  print("CPCODE is ALL SET!!! Lets update the configuration now.") 
+                  print("CPCODE is created. Updating your configuration...") 
                   result=updateConfigRules(contractid,groupid,propertyid,origin_dns_ip,cpcode,cpcode_time,hostname)
                   if result.status_code != 200:
                     print("Sorry, something went wrong with config update! Exiting the program now!")
@@ -149,13 +152,22 @@ if __name__ == '__main__':
                     exit()
                   else:
                     print("Success! Config is now updated!, Activating the configuration to STAGING network now.")
-                    result=activateConfig(contractid,groupid,propertyid,emailnotify)
+                    result=activateConfigStaging(contractid,groupid,propertyid,emailnotify)
                     if result.status_code != 201:
-                        print("There seems to be some error in deploying this configuration,Please check the Luna Portal. Error string below:")
+                        print("There seems to be an error in activating the config on production, please check the Akamai luna portal for error resolution. Error code from API backend below")
                         print(result.json())
                         exit()
                     else:
-                        print("Successfully deployed the config to staging network. Please give 15 mins for the activation to complete.") 
+                        print("Successfully activated the config on staging network. Please give it 15 mins for both the activation to complete.") 
+                        #check if staging activation is complete 
+                        #activationstagingID=re.search('(.*)atv_(.*)\?(.*)',str(result.json()))
+                        result=activateConfigProduction(contractid,groupid,propertyid,emailnotify)
+                        if result.status_code != 201:
+                          print("There seems to be an error in activating the config on production, please check the Akamai luna portal for error resolution. Error code from API backend below")
+                          print(result.json())
+                          exit()
+                        else:
+                          print("Successfully activated the config on staging network. Please give it 90 mins for both the activation to complete.")
 
 
 
