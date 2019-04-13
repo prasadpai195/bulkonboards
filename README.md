@@ -4,7 +4,7 @@ A python script that accepts a YAML file as the input and creates all the necces
 
 Maintained by 
 Prasad Pai @ Akamai Technologies
-Akhil Jayaprakash @ Akamai Technologies [Twitter](https://twitter.com/akhiljp_dev)
+| Akhil Jayaprakash @ Akamai Technologies [Twitter](https://twitter.com/akhiljp_dev)
 
 ## Installation Guide
 
@@ -39,41 +39,53 @@ OnboardCertconfig:
 OnboardSecurityConfig: <-- does not work at the moment, we are working on it. Stay tuned
   Policy: pol_name1
 ````
-
+### Step 3: Configure your Akamai Credentials
+Enter the appropriate API secrets within credentials.yml
+````
+Credentials:
+  - https://akab-xxxxx   <-- Base URL
+  - akab-xxxxxx          <-- Client Token
+  - jcHFxxxxxxxxxx       <-- Client Secret
+  - akab-vxxxx           <-- Access Token
+````
+### Step 4: Configure your AWS Route53 Credentials
+Enter the appropriate AWS route53 IAM API key ID and secret into papifunctions.py. These credentials will be used to create DNS records automatically when Akamai provides the script with the domain validation DNS instructions
+````
+Connecting to route 53 
+conn = route53.connect(
+    aws_access_key_id='XXXXXX',
+    aws_secret_access_key='o5XXXXXXXXXX',
+)
+````
+### Step 5: Enter the Route53 hosted zone ID within the script
+Enter the right Route53 hostedzone ID within papifunctions.py so the script knows which DNS zone it should create the resource record. 
+````
+    zone = conn.get_hosted_zone_by_id('Z1XXXXXX')
+````
 
 
 ## Usage Instructions
 
 ### Step 1: 
-Enter multiple hostname:staging-hostname combination into the  separated by a comma
-For example:
+Execute the python script 
 
-1. For single hostname & staging hostname combination enter : www.foo.com:www.foo.com.edgekey-staging.net
+````
+python3 hulkcreator.py -f input.yml
+````
 
-2. For multiple hostnames & staging hostnames combination enter : www.foo.com:www.foo.com.edgekey-staging.net,static.foo.com:static.foo.edgekey-staging.net
+The script will commence execution with the required data. The script starts with creating a CPS enrollment, then fetching the DV challenges. The DNS challenges are fed into AWS route53 APIs and upon a successful response it proceeds to deploying the cert. 
+Once the certificate is deployed, the script starts performing the following operations
+1. Secure Edgehostname
+2. Creating a blank Property manager file for individual domains
+3. Create a new CP codes for each of the domains
+4. Update the initial blank property manager file with the secure edgehostname, CP code and the appropriate forward SSL settings
+5. Pushes the config to staging
+6. Pushes the config to production and exits the script
 
-![alt-text](https://github.com/akhiljay/Akamai-staging-proxy/blob/master/proxy-usage-1.png)
+### Step 2: Email confirmation once activation is complete
+Once the activation is complete on both staging and production, an email will be sent as a notification. 
 
 
-### Step 3: Click "save proxy settings" to start routing chrome browser traffic to Akamai Staging 
-
-![alt-text](https://github.com/akhiljay/Akamai-staging-proxy/blob/master/proxy-usage-2.png)
-Now all your browser traffic is being proxies via the Akamai-staging-proxy server that you have running locally
-
-> Note: You can configure proxy settings for incognito windows as well. In order to do that you will need to first allow the extension to access incognito window
-
-## You are all Set! 
-Tweet at me [here](https://twitter.com/akhiljp_dev)  if you like the extension 
-
-Additional Notes:
-
-> * You can always revert back your Chrome browser's proxy settings by selecting "Use the system's proxy settings" within the google proxy extension
-
-> * You can keep the node server running if you wish, but if you may wish to stop it anytime by clicking on CRTL-C
-
-## Credits
-1. Chrome Extension code from Mike West @ google
-2. Node HTTP server based on [Node Proxy Server](https://github.com/nodejitsu/node-http-proxy) Charlie Robbins, Jarrett Cruger & the Contributors.
 
 
 
