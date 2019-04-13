@@ -1,7 +1,7 @@
 OnboardConfig:
  Account:
-  - ctr_G-2HFSI15
-  - grp_126485
+  - ctr_G-XXXX
+  - grp_XXXXX
  ProductId:
   - prd_Fresca
  Host-Origin:
