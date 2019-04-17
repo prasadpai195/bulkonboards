@@ -21,7 +21,7 @@ import argparse
 from datetime import datetime
 import calendar
 import yaml
-from papifunctions import createNewConfig,addHostNames,updateConfigRules,creatCertEnrollment,activateConfigStaging,activateConfigProduction,createCPCodes,getCPCodes,createSecureEdgeHostname,checkCertEnrollment,getDVChallenges
+from papifunctions import createNewConfig,addHostNames,updateConfigRules,creatCertEnrollment,activateConfigStaging,activateConfigProduction,createCPCodes,getCPCodes,createSecureEdgeHostname,checkCertEnrollment,getDVChallenges,appsecaddhostnames
 import time
 import route53
 # Main Program
@@ -50,6 +50,8 @@ if __name__ == '__main__':
     certdecision = yamlhandle['OnboardCertconfig']['Action']
     certcn = yamlhandle['OnboardCertconfig']['CN']
     certaltnames=yamlhandle['OnboardCertconfig']['Altnames']
+    pol_id=yamlhandle['OnboardSecurityConfig']['Policy_ID']
+    pol_version_number=yamlhandle['OnboardSecurityConfig']['Policy_V_No']
     # Let us first put in the cert request, as that takes a longer time...
     if certdecision == True:
       print("Step 1: Certificate creation job in progress. Please note that the normal certification creation and deployment ETA is approximately 4 hours.")
@@ -154,7 +156,7 @@ if __name__ == '__main__':
                     print("Success! Config is now updated!, Activating the configuration to STAGING network now.")
                     result=activateConfigStaging(contractid,groupid,propertyid,emailnotify)
                     if result.status_code != 201:
-                        print("There seems to be an error in activating the config on production, please check the Akamai luna portal for error resolution. Error code from API backend below")
+                        print("There seems to be an error in activating the config on staging network, please check the Akamai luna portal for error resolution. Error code from API backend below")
                         print(result.json())
                         exit()
                     else:
@@ -164,10 +166,18 @@ if __name__ == '__main__':
                         result=activateConfigProduction(contractid,groupid,propertyid,emailnotify)
                         if result.status_code != 201:
                           print("There seems to be an error in activating the config on production, please check the Akamai luna portal for error resolution. Error code from API backend below")
-                          print(result.json())
+                          print(result.json());
                           exit()
                         else:
                           print("Successfully activated the config on production network. Please give it 90 mins for both the activation to complete.")
+                          # Once config is activated to production, wait for 20 mins and then trigger the appsec API to add domains into WAF.
+                          time.sleep(1200)
+                          result=appsecaddhostnames(pol_id,pol_version_number,hostname)
+                          if result.status_code != 200:
+                            print("Something went wrong with WAF hostname addition. Please contact Akamai representative to find out what went wrong. Error code shared below")
+                            print(result.json())
+                          else:
+                            print("Addition of the hostname to the security policy succesful. Lets move to the next hostnames")
 
 
 
