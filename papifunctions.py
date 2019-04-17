@@ -121,5 +121,16 @@ def activationStatus(contractID,groupID,propertyid,emailnotify):
   headers = {"content-type": "application/json"}
   result=s.post(urljoin(baseurl,'/papi/v1/properties/'+propertyid+'/activations/?contractId='+contractID+'&groupId='+groupID+''), data=json.dumps(data), headers=headers)
   return result
+def appsecaddhostnames(pol_id,pol_version_number,hostname):
+  #Get the existing hostname list
+  result=s.get(urljoin(baseurl,'/appsec/v1/configs/'+pol_id+'/versions/'+pol_version_number+'/selected-hostnames'))
+  data=json.loads(json.dumps(result.json()))
+  newhost={'hostname': hostname}
+  data['hostnameList'].append(newhost)
+  # Add the hostname to selected hosts(appends to the existing hosts list)
+  headers = {"content-type": "application/json"}
+  result=s.put(urljoin(baseurl, '/appsec/v1/configs/'+pol_id+'/versions/'+pol_version_number+'/selected-hostnames'),data=json.dumps(data),headers=headers)
+  return result
+
 
 

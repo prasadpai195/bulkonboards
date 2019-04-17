@@ -1,20 +1,30 @@
 OnboardConfig:
  Account:
+  #Enter contract ID
   - ctr_G-XXXX
+  #Enter Group ID
   - grp_XXXXX
  ProductId:
+  #Enter the product ID
   - prd_Fresca
  Host-Origin:
+  #Enter hostnames:originnames one per line.
   - onboard10.akamai.tools:onboard10-origin.akamai.tools
   - onboard11.akamai.tools:onboard11-origin.akamai.tools
  notify:
+  #Enter notification email.
   - jpakhil@gmail.com
 OnboardCertconfig:
   Action: TRUE
+  #Enter Common Name of the cert
   CN: onboard10.akamai.tools
+  #Enter Altnames in the box, enclosed in "" and separated by a comma
   Altnames: ["onboard11.akamai.tools"]
 OnboardSecurityConfig:
-  Policy: pol_name1
+  #Enter WAF policy ID
+  Policy_ID: pol_name1
+  #Enter WAF policy version number
+  Policy_V_No: pol_v_no
   
 
 

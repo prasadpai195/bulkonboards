@@ -15,6 +15,7 @@ OnboardCertconfig:
   Altnames: ["onboard11.akamai.tools"]
 OnboardSecurityConfig:
   Policy: pol_name1
+  Policy_V_No: pol_v_no
   
 
 
