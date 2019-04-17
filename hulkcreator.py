@@ -167,7 +167,7 @@ if __name__ == '__main__':
                           print(result.json())
                           exit()
                         else:
-                          print("Successfully activated the config on staging network. Please give it 90 mins for both the activation to complete.")
+                          print("Successfully activated the config on production network. Please give it 90 mins for both the activation to complete.")
 
 
 
