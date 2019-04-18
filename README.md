@@ -37,7 +37,8 @@ OnboardCertconfig:
   CN: onboard10.akamai.tools
   Altnames: ["onboard11.akamai.tools"]
 OnboardSecurityConfig: <-- does not work at the moment, we are working on it. Stay tuned
-  Policy: pol_name1
+  Policy: pol_id
+  Policy_V_No: pol_v_no
 ````
 ### Step 3: Configure your Akamai Credentials
 Enter the appropriate API secrets within credentials.yml
