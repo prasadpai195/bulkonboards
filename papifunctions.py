@@ -24,10 +24,10 @@ client_secret=client_secret,
 access_token=access_token
 )
 # Connecting to route 53
-#conn = route53.connect(
-#  aws_access_key_id='XXXXXX',
-#  aws_secret_access_key='o5XXXXXXXXXX',
-#)
+conn = route53.connect(
+   aws_access_key_id='XXXX',
+   aws_secret_access_key='XXX',
+)
 
 def creatCertEnrollment(contractid,commonname,altnames):
   #Function to create cert enrollment.
@@ -54,7 +54,7 @@ def getDVChallenges(enrollmentID):
     status="fail";
   else:
     status="success";
-    zone = conn.get_hosted_zone_by_id('Z18XT5TVMN5UQR')
+    zone = conn.get_hosted_zone_by_id('ZXXXXX')
     dvtree=data["results"];
     for domain in dvtree:
       for children in domain["domainHistory"]:
@@ -74,10 +74,8 @@ def createSecureEdgeHostname(hostname,contractid,groupid,enrollmentid):
   headers={"content-type": "application/x-www-form-urlencoded"}
   #data={"productId": productid,"domainPrefix": hostname,"domainSuffix": "edgekey.net","secure":"true","ipVersionBehavior": "IPV4","slotNumber": 19,"certEnrollmentId":enrollmentid}
   data="cnameHostname="+hostname+"&enrollmentId="+enrollmentid+""
-  print(contractid)
-  print(groupid)
   result=s.post(urljoin(baseurl,'/config-secure-provisioning-service/v1/secure-edge-hosts?contractId='+contractid+'&groupId='+groupid+''), data=data, headers=headers)
-  print(result.json())
+  return result
 def createCPCodes(productid,contractid,groupid,hostname):
   headers={"content-type": "application/json"}
   data={"cpcodeName": hostname ,"productId": productid}
