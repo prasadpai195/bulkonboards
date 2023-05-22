@@ -36,7 +36,7 @@ OnboardCertconfig:
   Action: TRUE
   CN: onboard10.akamai.tools
   Altnames: ["onboard11.akamai.tools"]
-OnboardSecurityConfig: <-- does not work at the moment, we are working on it. Stay tuned
+OnboardSecurityConfig: 
   Policy: pol_id
   Policy_V_No: pol_v_no
 ````
